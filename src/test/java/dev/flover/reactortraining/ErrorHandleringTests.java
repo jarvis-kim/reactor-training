@@ -237,4 +237,112 @@ public class ErrorHandleringTests {
         log.info("finish test method");
     }
 
+
+    /**
+     * 특징
+     * - exception 발생한 item은 onErrorContinue거치고, 이후 sequence는 계속 진행 된다.
+     */
+    @Test
+    public void test_handling_error_on_errorContinue() {
+        log.info("start test method");
+        Flux.range(1, 10)
+                .map(integer -> {
+                    if (integer == 5) {
+                        throw new IllegalStateException("error on map");
+                    }
+
+                    return integer;
+                })
+                .onErrorContinue((throwable, o) -> {
+                    log.warn("warning error.");
+                })
+                .subscribe(integer -> log.info("received value is {}.", integer),
+                        throwable -> log.error("occurred error.", throwable),
+                        () -> log.info("complete."));
+
+        log.info("finish test method");
+    }
+
+    /**
+     * 특징
+     * - retry가 동작 할것 같지만 동작하지 않는다.
+     * - onErrorContinue만 동작한다. 즉, onErrorContinue 만 사용하는거랑 똑같이 동작한다.
+     * 왜..?
+     */
+    @Test
+    public void test_handling_error_on_errorContinue_with_retry() {
+        log.info("start test method");
+        Flux.range(1, 10)
+                .map(integer -> {
+                    if (integer == 5) {
+                        throw new IllegalStateException("error on map");
+                    }
+
+                    return integer;
+                })
+                .retry(2)
+                .onErrorContinue((throwable, o) -> {
+                    log.warn("warning error.");
+                })
+                .subscribe(integer -> log.info("received value is {}.", integer),
+                        throwable -> log.error("occurred error.", throwable),
+                        () -> log.info("complete."));
+
+        log.info("finish test method");
+    }
+
+    /**
+     * 특징
+     * - onErrorStop 이후 onErrorContinue를 사용 했을 때, 더이상 sequence 가 발생하지 않는다.
+     *
+     */
+    @Test
+    public void test_handling_error_on_errorStop() {
+        log.info("start test method");
+        Flux.range(1, 10)
+                .map(integer -> {
+                    if (integer == 5) {
+                        throw new IllegalStateException("error on map");
+                    }
+
+                    return integer;
+                })
+                .onErrorStop()
+                .onErrorContinue((throwable, o) -> {
+                    log.warn("onErrorContinue!!");
+                })
+                .subscribe(integer -> log.info("received value is {}.", integer),
+                        throwable -> log.error("occurred error.", throwable),
+                        () -> log.info("complete."));
+
+        log.info("finish test method");
+    }
+
+
+    /**
+     * 특징
+     *  - doOnError 가 실행 된다.
+     *  - 이후 errorConsumer가 실행 된다.
+     *  - sequence가 종료된다.
+     */
+    @Test
+    public void test_handling_error_doOnError() {
+        log.info("start test method");
+        Flux.range(1, 10)
+                .map(integer -> {
+                    if (integer == 5) {
+                        throw new IllegalStateException("error on map");
+                    }
+
+                    return integer;
+                })
+                .doOnError(throwable -> {
+                    log.error("doOnError..!!");
+                })
+                .subscribe(integer -> log.info("received value is {}.", integer),
+                        throwable -> log.error("occurred error.", throwable),
+                        () -> log.info("complete."));
+
+        log.info("finish test method");
+    }
 }
